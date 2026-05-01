@@ -2,6 +2,8 @@
 
 A production-ready full-stack project management app built with React + Node.js + MongoDB.
 
+[![Deploy on Railway](https://railway.com/button.svg)](https://railway.com/deploy/xdH2XA?referralCode=YCY2ky&utm_medium=integration&utm_source=template&utm_campaign=generic)
+
 ---
 
 ## Tech Stack

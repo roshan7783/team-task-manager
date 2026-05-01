@@ -51,14 +51,21 @@ app.get("/api/health", (req, res) => {
 // Serve React frontend if the dist folder exists (works on Render/Railway)
 const frontendDist = path.join(__dirname, "../frontend/dist");
 
+console.log("Checking for frontend dist at:", frontendDist);
+console.log("Dist exists:", fs.existsSync(frontendDist));
+
 if (fs.existsSync(frontendDist)) {
-  app.use(express.static(frontendDist));
+  console.log("✅ Serving frontend from", frontendDist);
+  app.use(express.static(frontendDist, { 
+    maxAge: "1d",
+    etag: false 
+  }));
   // All non-API routes serve index.html so React Router works
   app.get("*", (req, res) => {
     res.sendFile(path.join(frontendDist, "index.html"));
   });
-  console.log("✅ Serving frontend from", frontendDist);
 } else {
+  console.log("⚠️  Frontend dist not found at", frontendDist);
   // No dist folder — dev mode, return 404 for unknown routes
   app.use((req, res) => {
     res.status(404).json({ success: false, message: "Route not found" });

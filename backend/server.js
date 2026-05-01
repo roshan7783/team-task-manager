@@ -12,6 +12,8 @@ connectDB();
 const app = express();
 
 // ─── CORS ─────────────────────────────────────────────────────────────────────
+// In production, frontend and backend are on the same domain so we allow all.
+// In development, allow the Vite dev server origin.
 const allowedOrigins = (process.env.CLIENT_URL || "http://localhost:5173")
   .split(",")
   .map((o) => o.trim());
@@ -19,8 +21,12 @@ const allowedOrigins = (process.env.CLIENT_URL || "http://localhost:5173")
 app.use(
   cors({
     origin: (origin, callback) => {
+      // In production same-domain requests have no origin header — always allow
       if (!origin) return callback(null, true);
+      // Allow configured origins
       if (allowedOrigins.includes(origin)) return callback(null, true);
+      // In production allow everything (frontend served by same Express)
+      if (process.env.NODE_ENV === "production") return callback(null, true);
       callback(new Error(`CORS: origin ${origin} not allowed`));
     },
     credentials: true,

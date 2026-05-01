@@ -14,6 +14,12 @@ const app = express();
 // ─── Body Parser ──────────────────────────────────────────────────────────────
 app.use(express.json());
 
+// ─── Request Logging ──────────────────────────────────────────────────────────
+app.use((req, res, next) => {
+  console.log(`📨 ${req.method} ${req.path}`);
+  next();
+});
+
 // ─── CORS (only for API routes) ───────────────────────────────────────────────
 // In production, frontend and backend are on the same domain so we allow all.
 // In development, allow the Vite dev server origin.
@@ -35,11 +41,22 @@ const corsMiddleware = cors({
   credentials: true,
 });
 
+// Wrap CORS to catch errors
+const corsWrapper = (req, res, next) => {
+  corsMiddleware(req, res, (err) => {
+    if (err) {
+      console.error("CORS Error:", err.message);
+      return res.status(403).json({ success: false, message: "CORS error" });
+    }
+    next();
+  });
+};
+
 // ─── API Routes ───────────────────────────────────────────────────────────────
-app.use("/api/auth", corsMiddleware, require("./routes/authRoutes"));
-app.use("/api/projects", corsMiddleware, require("./routes/projectRoutes"));
-app.use("/api/tasks", corsMiddleware, require("./routes/taskRoutes"));
-app.use("/api/dashboard", corsMiddleware, require("./routes/dashboardRoutes"));
+app.use("/api/auth", corsWrapper, require("./routes/authRoutes"));
+app.use("/api/projects", corsWrapper, require("./routes/projectRoutes"));
+app.use("/api/tasks", corsWrapper, require("./routes/taskRoutes"));
+app.use("/api/dashboard", corsWrapper, require("./routes/dashboardRoutes"));
 
 // Health check
 app.get("/api/health", (req, res) => {
@@ -88,4 +105,13 @@ app.listen(PORT, () => {
   console.log(
     `🚀 Server running in ${process.env.NODE_ENV || "development"} mode on port ${PORT}`
   );
+});
+
+// ─── Catch Unhandled Errors ───────────────────────────────────────────────────
+process.on("unhandledRejection", (reason, promise) => {
+  console.error("❌ Unhandled Rejection at:", promise, "reason:", reason);
+});
+
+process.on("uncaughtException", (error) => {
+  console.error("❌ Uncaught Exception:", error);
 });

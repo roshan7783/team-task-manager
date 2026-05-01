@@ -2,6 +2,7 @@ require("dotenv").config();
 const express = require("express");
 const cors = require("cors");
 const path = require("path");
+const fs = require("fs");
 const connectDB = require("./config/db");
 const errorHandler = require("./middleware/errorHandler");
 
@@ -11,8 +12,6 @@ connectDB();
 const app = express();
 
 // ─── CORS ─────────────────────────────────────────────────────────────────────
-// In production the frontend is served by Express itself, so CORS is only
-// needed for external clients. In development it allows the Vite dev server.
 const allowedOrigins = (process.env.CLIENT_URL || "http://localhost:5173")
   .split(",")
   .map((o) => o.trim());
@@ -20,7 +19,7 @@ const allowedOrigins = (process.env.CLIENT_URL || "http://localhost:5173")
 app.use(
   cors({
     origin: (origin, callback) => {
-      if (!origin) return callback(null, true); // curl / Postman / mobile
+      if (!origin) return callback(null, true);
       if (allowedOrigins.includes(origin)) return callback(null, true);
       callback(new Error(`CORS: origin ${origin} not allowed`));
     },
@@ -37,24 +36,24 @@ app.use("/api/projects", require("./routes/projectRoutes"));
 app.use("/api/tasks", require("./routes/taskRoutes"));
 app.use("/api/dashboard", require("./routes/dashboardRoutes"));
 
-// Health check — used by Railway uptime monitor
+// Health check
 app.get("/api/health", (req, res) => {
   res.json({ success: true, message: "Team Task Manager API is running 🚀" });
 });
 
-// ─── Serve Frontend (Production) ─────────────────────────────────────────────
-// In production Railway builds the frontend and Express serves it as static files.
-// Any non-API route falls through to index.html so React Router works correctly.
-if (process.env.NODE_ENV === "production") {
-  const frontendDist = path.join(__dirname, "../frontend/dist");
+// ─── Serve Frontend ───────────────────────────────────────────────────────────
+// Serve React frontend if the dist folder exists (works on Render/Railway)
+const frontendDist = path.join(__dirname, "../frontend/dist");
+
+if (fs.existsSync(frontendDist)) {
   app.use(express.static(frontendDist));
+  // All non-API routes serve index.html so React Router works
   app.get("*", (req, res) => {
     res.sendFile(path.join(frontendDist, "index.html"));
   });
-}
-
-// ─── 404 for unknown API routes (dev only) ───────────────────────────────────
-if (process.env.NODE_ENV !== "production") {
+  console.log("✅ Serving frontend from", frontendDist);
+} else {
+  // No dist folder — dev mode, return 404 for unknown routes
   app.use((req, res) => {
     res.status(404).json({ success: false, message: "Route not found" });
   });

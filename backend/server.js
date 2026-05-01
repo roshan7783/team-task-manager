@@ -11,36 +11,35 @@ connectDB();
 
 const app = express();
 
-// ─── CORS ─────────────────────────────────────────────────────────────────────
+// ─── Body Parser ──────────────────────────────────────────────────────────────
+app.use(express.json());
+
+// ─── CORS (only for API routes) ───────────────────────────────────────────────
 // In production, frontend and backend are on the same domain so we allow all.
 // In development, allow the Vite dev server origin.
+// Apply CORS only to /api routes to avoid interfering with static file serving.
 const allowedOrigins = (process.env.CLIENT_URL || "http://localhost:5173")
   .split(",")
   .map((o) => o.trim());
 
-app.use(
-  cors({
-    origin: (origin, callback) => {
-      // In production same-domain requests have no origin header — always allow
-      if (!origin) return callback(null, true);
-      // Allow configured origins
-      if (allowedOrigins.includes(origin)) return callback(null, true);
-      // In production allow everything (frontend served by same Express)
-      if (process.env.NODE_ENV === "production") return callback(null, true);
-      callback(new Error(`CORS: origin ${origin} not allowed`));
-    },
-    credentials: true,
-  })
-);
-
-// ─── Body Parser ──────────────────────────────────────────────────────────────
-app.use(express.json());
+const corsMiddleware = cors({
+  origin: (origin, callback) => {
+    // In production same-domain requests have no origin header — always allow
+    if (!origin) return callback(null, true);
+    // Allow configured origins
+    if (allowedOrigins.includes(origin)) return callback(null, true);
+    // In production allow everything (frontend served by same Express)
+    if (process.env.NODE_ENV === "production") return callback(null, true);
+    callback(new Error(`CORS: origin ${origin} not allowed`));
+  },
+  credentials: true,
+});
 
 // ─── API Routes ───────────────────────────────────────────────────────────────
-app.use("/api/auth", require("./routes/authRoutes"));
-app.use("/api/projects", require("./routes/projectRoutes"));
-app.use("/api/tasks", require("./routes/taskRoutes"));
-app.use("/api/dashboard", require("./routes/dashboardRoutes"));
+app.use("/api/auth", corsMiddleware, require("./routes/authRoutes"));
+app.use("/api/projects", corsMiddleware, require("./routes/projectRoutes"));
+app.use("/api/tasks", corsMiddleware, require("./routes/taskRoutes"));
+app.use("/api/dashboard", corsMiddleware, require("./routes/dashboardRoutes"));
 
 // Health check
 app.get("/api/health", (req, res) => {

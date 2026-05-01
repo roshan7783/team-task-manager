@@ -43,7 +43,15 @@ app.use("/api/dashboard", corsMiddleware, require("./routes/dashboardRoutes"));
 
 // Health check
 app.get("/api/health", (req, res) => {
-  res.json({ success: true, message: "Team Task Manager API is running 🚀" });
+  const mongoose = require("mongoose");
+  const dbConnected = mongoose.connection.readyState === 1;
+  res.json({ 
+    success: true, 
+    message: "Team Task Manager API is running 🚀",
+    database: dbConnected ? "✅ Connected" : "❌ Disconnected",
+    environment: process.env.NODE_ENV,
+    mongoUri: process.env.MONGO_URI ? "✓ Set" : "✗ Not set"
+  });
 });
 
 // ─── Serve Frontend ───────────────────────────────────────────────────────────

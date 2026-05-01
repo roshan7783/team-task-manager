@@ -4,7 +4,8 @@
  * Returns a consistent JSON error shape to the client.
  */
 const errorHandler = (err, req, res, next) => {
-  // Log the stack in development for easier debugging
+  // Log the error in production for debugging
+  console.error(`❌ API Error [${req.method} ${req.path}]:`, err.message);
   if (process.env.NODE_ENV === "development") {
     console.error(err.stack);
   }

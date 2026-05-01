@@ -26,10 +26,10 @@ const corsMiddleware = cors({
   origin: (origin, callback) => {
     // In production same-domain requests have no origin header — always allow
     if (!origin) return callback(null, true);
-    // Allow configured origins
-    if (allowedOrigins.includes(origin)) return callback(null, true);
-    // In production allow everything (frontend served by same Express)
+    // In production, allow all origins (frontend served by same Express)
     if (process.env.NODE_ENV === "production") return callback(null, true);
+    // In development, allow configured origins
+    if (allowedOrigins.includes(origin)) return callback(null, true);
     callback(new Error(`CORS: origin ${origin} not allowed`));
   },
   credentials: true,
